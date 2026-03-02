@@ -318,18 +318,33 @@ RBAC обязателен.
 
 ---
 
-## 16) Рекомендованный стек
+## 16) Утвержденный стек (final)
 
-- Backend: NestJS + PostgreSQL + Redis
-- Web: Next.js
+- Backend API: NestJS (Node.js, TypeScript)
+- Database: PostgreSQL (Railway)
+- Cache/queues: Redis + BullMQ (Railway)
+- Web (публичный сайт + кабинет): Next.js (Vercel)
+- Admin panel (кастомная): Next.js (отдельный app, Vercel)
 - Mobile: React Native
-- Queue jobs: BullMQ
-- Observability: Sentry + Grafana/Prometheus
+- Observability: Sentry
 - CI/CD: GitHub Actions
+- DNS/SSL/WAF: Cloudflare
 
 ---
 
-## 17) Обязательные артефакты после согласования
+## 17) Deployment-контур (утверждено)
+
+- `www` (публичный сайт) → Vercel
+- `app` (кабинет клиента web) → Vercel
+- `admin` (кастомная админка) → Vercel
+- `api` (NestJS backend) → Railway
+- `worker` (очереди, waitlist, push, reconciliation) → Railway
+- `postgres` → Railway managed PostgreSQL
+- `redis` → Railway managed Redis
+- Edge слой: Cloudflare (DNS, SSL, WAF, rate limiting)
+- Мониторинг ошибок: Sentry (web/admin/mobile/backend)
+
+## 18) Обязательные артефакты после согласования
 
 1. OpenAPI спецификация.
 2. ERD + миграции БД.
