@@ -27,7 +27,6 @@
 4. **GymMaster API** (клиенты, расписание, бронирования, покупки/балансы).
 5. **Payment Connectors**:
    - JCC Smart (карты),
-   - Revolut Business (платежи/уведомления).
 6. **Notification Service** (push/email, при необходимости SMS).
 7. **DB/Storage** для служебных данных интеграции, логов, аудита, идемпотентности.
 
@@ -43,7 +42,7 @@
 ## 3.1 Backend
 - API для веба и мобайла.
 - Интеграция с GymMaster API.
-- Интеграция с JCC/Revolut.
+- Интеграция с JCC.
 - Webhook endpoints, валидация подписи, обработка событий.
 - Синхронизация и reconciliation платежей.
 - Бизнес-правила (статусы покупок, отмены, дедупликация запросов).
@@ -97,7 +96,7 @@
 ### PaymentTransaction
 - `id`
 - `purchaseId`
-- `provider` (`jcc|revolut|cash`)
+- `provider` (`jcc|cash`)
 - `providerPaymentId`
 - `status` (`created|authorized|captured|failed|expired|refunded|pending`)
 - `rawPayload` (json, masked)
@@ -138,19 +137,16 @@
 
 ## 5.4 Платежи
 - `POST /api/v1/payments/jcc/create`
-- `POST /api/v1/payments/revolut/create`
 - `POST /api/v1/payments/cash/confirm` (admin only)
 - `GET /api/v1/payments/{id}/status`
 
 ## 5.5 Webhooks
 - `POST /api/v1/webhooks/jcc`
-- `POST /api/v1/webhooks/revolut`
 
 ## 5.6 Админ-операции
 - `POST /api/v1/admin/clients/create-or-link`
 - `POST /api/v1/admin/purchases/create`
 - `POST /api/v1/admin/purchases/{id}/mark-paid-cash`
-- `POST /api/v1/admin/purchases/{id}/mark-paid-revolut-manual`
 
 ---
 
@@ -173,14 +169,6 @@
 2. После фактического приема наличных жмет «Подтвердить кэш».
 3. Backend переводит `Purchase=paid` с `provider=cash`.
 4. Backend фиксирует покупку в GymMaster.
-
-## 6.3 Revolut — целевой flow
-1. Backend создает платежный intent/link/reference в Revolut.
-2. Клиент оплачивает.
-3. Revolut webhook о событии оплаты поступает в backend.
-4. Backend проверяет подпись + сумму + currency + reference.
-5. При успехе: `Purchase=paid`, запись в GymMaster.
-6. При timeout/несовпадении: `manual_review`.
 
 ---
 
@@ -221,11 +209,6 @@
 - Реализовать API client для create payment / status check.
 - Реализовать callback endpoint (если поддерживается).
 - Fallback polling по `providerPaymentId` при недоставке callback.
-
-## 8.3 Revolut
-- Реализовать сценарий webhook real-time подтверждения.
-- Поддержать reconciliation job (cron) для pending платежей.
-- Обязательная сверка: amount/currency/reference/client.
 
 ---
 
@@ -304,7 +287,7 @@
 
 ## 13.1 Backend
 - Unit + integration tests.
-- Contract tests к GymMaster/JCC/Revolut sandbox.
+- Contract tests к GymMaster/JCC sandbox.
 - Webhook tests (валидная/невалидная подпись, дубликаты, reorder).
 
 ## 13.2 Frontend/Mobile
@@ -323,7 +306,7 @@
 ## 14. Этапы реализации (delivery)
 
 ## Sprint 0 (1–2 недели)
-- Discovery API (GymMaster, JCC, Revolut).
+- Discovery API (GymMaster, JCC).
 - Подтверждение контрактов и ограничений.
 - Финализация архитектуры и ERD.
 
@@ -336,7 +319,6 @@
 - Admin operations.
 
 ## Sprint 5
-- Revolut webhook flow + reconciliation.
 - Notification service.
 
 ## Sprint 6
@@ -351,7 +333,7 @@
 2. Покупка/оплата/начисление занятий работает end-to-end.
 3. Webhooks обрабатываются идемпотентно и безопасно.
 4. Клиент может записаться и оплатить через web и mobile.
-5. Админ может провести продажу в студии по 3 методам: карта/JCC, кэш, Revolut.
+5. Админ может провести продажу в студии по 2 методам: карта/JCC, кэш.
 6. Есть логи, алерты, дешборды, инструкции поддержки.
 
 ---
@@ -360,7 +342,6 @@
 
 1. GymMaster: точный API-метод для «продажи пакета от имени админа» и подтверждения покупки.
 2. JCC Smart: подтвержденный сценарий передачи суммы на терминал из внешней системы.
-3. Revolut: какие именно входящие платежные сценарии дают realtime webhook (и какие event types использовать).
 4. Требуется ли фискализация/инвойсинг на стороне Кипра в рамках MVP.
 5. Нужен ли отдельный admin UI или достаточно GymMaster + служебная панель операций.
 
